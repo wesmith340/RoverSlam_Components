@@ -12,6 +12,7 @@ Or
 `sudo apt install ros-noetic-ros-base` for base with no gui components
 
 ```bash
+sudo apt install ros-noetic-desktop
 sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 sudo apt install python3-rosdep
 sudo rosdep init
