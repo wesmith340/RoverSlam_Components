@@ -6,13 +6,14 @@ import numpy as np
 from collections import deque
 from controls import ControlType
 import roversim
+import pygame
 
 posResult = []
 oriResult = []
 
 RAD_TO_DEGREES = 180 / math.pi
 ANGLE_THRESHOLD = 10 # degrees
-DISTANCE_THRESHOLD = .5 # meters
+DISTANCE_THRESHOLD = .1 # meters
 ONTOP_THRESHOLD = .1 # meters
 
 class Coord:
@@ -48,7 +49,8 @@ class Slam:
 
         # global currentPos
         currentPos = Coord(x,y,angTheta)
-
+        roversim.ROVER.setPosition(roversim.Vector2(currentPos.x, currentPos.y))
+        roversim.ROVER.setRotation(currentPos.rads)
         if (self.recordFlag):
             if len(self.path) == 0:
                 self.path.append(currentPos)
@@ -61,19 +63,23 @@ class Slam:
                 roversim.ROVER.addToPath(roversim.Vector2(currentPos.x, currentPos.y))
         elif (self.followFlag):
             print(self.followPath(currentPos))
+        
+        roversim.screen.fill((255, 255, 255))
+        roversim.ROVER.draw(roversim.screen)
+        pygame.display.flip()
 
 
-    def pointToPoint(self, currentPos:Coord) -> ControlType:
+    def followPath(self, currentPos:Coord) -> ControlType:
         if len(self.path) > 0:
             targetPos = self.path[-1]
             targetAngle = math.atan2(targetPos.y-currentPos.y, targetPos.x-currentPos.x)
 
-            cAng = currentPos.rad
+            cAng = currentPos.rads
 
             eucDist = math.sqrt((currentPos.x-targetPos.x)**2+(currentPos.y-targetPos.y)**2)
             if eucDist < ONTOP_THRESHOLD:
-                targetPos = self.path.pop()
-                control = ControlType.STOP
+                self.path.pop()
+                self.control = ControlType.STOP
                 # for point in path:
                 #     print(point.strPos())
                 #     print()
@@ -100,6 +106,8 @@ class Slam:
         else:
             print('END OF PATH')
             self.control = ControlType.NOTHING
+
+        return self.control
 
 
     def wrap(angle):

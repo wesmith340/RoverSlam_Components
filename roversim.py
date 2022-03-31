@@ -15,14 +15,14 @@ class Vector2:
         return Vector2(self.x, self.y)
 
     def __add__(self, other: object) -> object:
-        x = self.x + other.x
-        y = self.y + other.y
-        return Vector2(x, y)
+        self.x += other.x
+        self.y += other.y
+        return self
 
     def __iadd__(self, other: object) -> object:
-        x = self.x + other.x
-        y = self.y + other.y
-        return Vector2(x,y)
+        self.x += other.x
+        self.y += other.y
+        return self
 
     def __mul__(self, scalar: float) -> object:
         self.x *= scalar
@@ -34,29 +34,25 @@ class Vector2:
 
 
 pygame.init()
-SCALE = .5
-CIRCLE_SIZE = 20
+SCALE = 0.5
 WIDTH = 900
 HEIGHT = 900
-ORIGIN = Vector2(WIDTH/2, HEIGHT/2)
+ORIGIN = Vector2(WIDTH, HEIGHT)
 screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 pygame.display.set_caption("Point2Point Navigation")
 
 
 class Rover:
-    def __init__(self, rotation=0, position: Vector2 = Vector2(0, 0)) -> None:
+    def __init__(self, rotation=math.pi, position: Vector2 = Vector2(0, 0)) -> None:
         self.rotation = rotation
         self.position: Vector2 = position
-        self.SIZE = CIRCLE_SIZE
+        self.SIZE = 10
         self.ROTATIONSTEP = math.pi/1024
         self.STEP = 0.1
         self.path: List[Vector2] = []
 
     def addToPath(self, point: Vector2) -> None:
         self.path.append(point)
-
-    def clearPath(self) -> None:
-        self.path.clear()
 
     def setRotation(self, rotation: float) -> None:
         self.rotation = rotation
@@ -75,12 +71,13 @@ class Rover:
                 pygame.draw.line(screen, (255, 0, 0),
                                  lastPoint.getTuple(), point.getTuple())
             pygame.draw.circle(screen, (0, 255, 0),
-                               point.getTuple(), CIRCLE_SIZE * SCALE)
+                               point.getTuple(), 10 * SCALE)
 
         # draw rover and rotation
         rover: Vector2 = self.position.copy() + ORIGIN
         rover *= SCALE
-        rotVec: Vector2 = Vector2(math.cos(self.rotation), math.sin(self.rotation))
+        rotVec: Vector2 = Vector2(
+            math.sin(self.rotation), math.cos(self.rotation))
         rotVec *= self.SIZE
         rotVec *= SCALE
         line: Vector2 = rover.copy() + rotVec
@@ -105,7 +102,7 @@ class Rover:
         self.position += move
 
 
-ROVER = Rover()
+ROVER = Rover(0)
 
 def draw():
     screen.fill((255, 255, 255))
@@ -115,13 +112,12 @@ def draw():
 def quit():
     pygame.quit()
 
-if __name__ == '__main__':
-    done = False
-    while not done:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                done = True
-        screen.fill((255, 255, 255))
-        ROVER.draw(screen)
-        pygame.display.flip()
+# done = False
+# while not done:
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             done = True
+#     screen.fill((255, 255, 255))
+#     ROVER.draw(screen)
+#     pygame.display.flip()
 
