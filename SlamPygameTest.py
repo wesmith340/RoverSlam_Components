@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from distutils.dir_util import remove_tree
 import math
+from multiprocessing.connection import answer_challenge
 from turtle import Vec2D
 import numpy as np
 import roversim
@@ -105,16 +106,27 @@ def nextMove(currentPos, angle, path):
             #     print(point.strPos())
             #     print()
     elif (math.radians(10) < abs(targetAngle - cAng)):
-        if (targetAngle - cAng < 0):
+        # if (targetAngle - cAng < 0):
+        #     print('TURN LEFT', f'{targetAngle:.2f} {angle:.2f}')
+        #     angle -= math.radians(5)
+        #     if angle < -1*math.pi:
+        #         angle = 2*math.pi + angle
+        # else:
+        #     print('TURN RIGHT', f'{targetAngle:.2f} {angle:.2f}')
+        #     angle += math.radians(5)
+        #     if angle > math.pi:
+        #         angle = -2*math.pi + angle
+
+        if targetAngle > cAng and targetAngle - cAng < math.pi:
             print('TURN LEFT', f'{targetAngle:.2f} {angle:.2f}')
-            angle -= math.radians(5)
-            if angle < -1*math.pi:
-                angle = 2*math.pi + angle
+
+            angle += math.radians(5)
+            angle = wrap(angle)
         else:
             print('TURN RIGHT', f'{targetAngle:.2f} {angle:.2f}')
-            angle += math.radians(5)
-            if angle > math.pi:
-                angle = -2*math.pi + angle
+            angle -= math.radians(5)
+            angle = wrap(angle)
+
     
     else:
         x = currentPos.x + 5*math.cos(angle)
@@ -123,6 +135,15 @@ def nextMove(currentPos, angle, path):
         print('FORWARD TO:', eucDist)
     
     return currentPos, angle
+
+def wrap(angle):
+    if angle > math.pi:
+        angle = 2*math.pi - angle
+        pass
+    elif angle < -1*math.pi:
+        angle = 2*math.pi + angle
+        pass
+    return angle
 
 def randomPoint(point:roversim.Vector2):
     xOffset = rand.randrange(-1*roversim.WIDTH/2,roversim.WIDTH/2)
