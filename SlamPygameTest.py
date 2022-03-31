@@ -84,61 +84,59 @@ def callback(data):
         
 
 def nextMove(currentPos, angle, path):
-    targetPos = path[-1]
+    if(len(path) == 0):
+        print('END OF PATH')
+    else: 
+        targetPos = path[-1]
+        targetAngle = math.atan2(targetPos.y-currentPos.y, targetPos.x-currentPos.x)
+        # curDeg = currentPos.degrees
+        cAng = angle
+        # if cAng < 0:
+        #     cAng = 2*math.pi + cAng
 
-    targetAngle = math.atan2(targetPos.y-currentPos.y, targetPos.x-currentPos.x)
-    # curDeg = currentPos.degrees
-    cAng = angle
-    if cAng < 0:
-        cAng = 2*math.pi + cAng
-
-    if targetAngle < 0:
-        targetAngle = 2*math.pi + targetAngle
-    eucDist = math.sqrt((currentPos.x-targetPos.x)**2+(currentPos.y-targetPos.y)**2)
-    if eucDist < ONTOP_THRESHOLD:
-        if(len(path) == 0):
-            # followFlag = False
-            print('END OF PATH')
-        else:
+        # if targetAngle < 0:
+        #     targetAngle = 2*math.pi + targetAngle
+        eucDist = math.sqrt((currentPos.x-targetPos.x)**2+(currentPos.y-targetPos.y)**2)
+        if eucDist < ONTOP_THRESHOLD:
             targetPos = path.pop()
             print('STOP')
             # for point in path:
             #     print(point.strPos())
             #     print()
-    elif (math.radians(10) < abs(targetAngle - cAng)):
-        # if (targetAngle - cAng < 0):
-        #     print('TURN LEFT', f'{targetAngle:.2f} {angle:.2f}')
-        #     angle -= math.radians(5)
-        #     if angle < -1*math.pi:
-        #         angle = 2*math.pi + angle
-        # else:
-        #     print('TURN RIGHT', f'{targetAngle:.2f} {angle:.2f}')
-        #     angle += math.radians(5)
-        #     if angle > math.pi:
-        #         angle = -2*math.pi + angle
+        elif (math.radians(10) < abs(targetAngle - cAng)):
+            # if (targetAngle - cAng < 0):
+            #     print('TURN LEFT', f'{targetAngle:.2f} {angle:.2f}')
+            #     angle -= math.radians(5)
+            #     if angle < -1*math.pi:
+            #         angle = 2*math.pi + angle
+            # else:
+            #     print('TURN RIGHT', f'{targetAngle:.2f} {angle:.2f}')
+            #     angle += math.radians(5)
+            #     if angle > math.pi:
+            #         angle = -2*math.pi + angle
 
-        if targetAngle > cAng and targetAngle - cAng < math.pi:
-            print('TURN LEFT', f'{targetAngle:.2f} {angle:.2f}')
+            if targetAngle > cAng and targetAngle - cAng < math.pi or targetAngle < cAng and cAng - targetAngle > math.pi:
+                print('TURN LEFT', f'{targetAngle:.2f} {angle:.2f}')
 
-            angle += math.radians(5)
-            angle = wrap(angle)
+                angle += math.radians(5)
+                angle = wrap(angle)
+            else:
+                print('TURN RIGHT', f'{targetAngle:.2f} {angle:.2f}')
+                angle -= math.radians(5)
+                angle = wrap(angle)
+
+        
         else:
-            print('TURN RIGHT', f'{targetAngle:.2f} {angle:.2f}')
-            angle -= math.radians(5)
-            angle = wrap(angle)
-
-    
-    else:
-        x = currentPos.x + 5*math.cos(angle)
-        y = currentPos.y + 5*math.sin(angle)
-        currentPos = roversim.Vector2(x,y)
-        print('FORWARD TO:', eucDist)
+            x = currentPos.x + 5*math.cos(angle)
+            y = currentPos.y + 5*math.sin(angle)
+            currentPos = roversim.Vector2(x,y)
+            print('FORWARD TO:', eucDist)
     
     return currentPos, angle
 
 def wrap(angle):
     if angle > math.pi:
-        angle = 2*math.pi - angle
+        angle = angle - 2*math.pi
         pass
     elif angle < -1*math.pi:
         angle = 2*math.pi + angle
