@@ -155,31 +155,32 @@ if __name__ == '__main__':
     roversim.ROVER.setPosition(randomPoint(roversim.ORIGIN))
     roversim.ROVER.setRotation(math.pi)
     roversim.draw()
+    while running: 
+        path.append(roversim.ORIGIN)
+        roversim.ROVER.addToPath(roversim.ORIGIN)
+        
+        for i in range(10):
+            nextPoint = randomPoint(path[-1])
+            print(nextPoint.getTuple())
+            path.append(nextPoint)
+            roversim.ROVER.addToPath(nextPoint)
+        print()
+        for point in path:
+            print(point.getTuple())
+        
 
-    path.append(roversim.ORIGIN)
-    roversim.ROVER.addToPath(roversim.ORIGIN)
-    
-    for i in range(10):
-        nextPoint = randomPoint(path[-1])
-        print(nextPoint.getTuple())
-        path.append(nextPoint)
-        roversim.ROVER.addToPath(nextPoint)
-    print()
-    for point in path:
-        print(point.getTuple())
-    
+        curPos = roversim.ROVER.position
+        angle = roversim.ROVER.rotation
+        while path and running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            roversim.screen.fill((255, 255, 255))
+            roversim.ROVER.draw(roversim.screen)
+            pygame.display.flip()
 
-    curPos = roversim.ROVER.position
-    angle = roversim.ROVER.rotation
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-        roversim.screen.fill((255, 255, 255))
-        roversim.ROVER.draw(roversim.screen)
-        pygame.display.flip()
-
-        curPos, angle = nextMove(curPos, angle, path)
-        roversim.ROVER.setPosition(curPos)
-        roversim.ROVER.setRotation(angle)
-        time.sleep(.1)
+            curPos, angle = nextMove(curPos, angle, path)
+            roversim.ROVER.setPosition(curPos)
+            roversim.ROVER.setRotation(angle)
+            time.sleep(.05)
+        roversim.ROVER.clearPath()

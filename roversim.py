@@ -55,6 +55,9 @@ class Rover:
     def addToPath(self, point: Vector2) -> None:
         self.path.append(point)
 
+    def clearPath(self) -> None:
+        self.path.clear()
+
     def setRotation(self, rotation: float) -> None:
         self.rotation = rotation
 
