@@ -1,2 +1,8 @@
 visualization/__pycache__/
 __pycache__/
+freenect_stack/
+geometry2/
+image_common/
+rgbd_launch/
+vision_opencv/
+image_pipeline/
