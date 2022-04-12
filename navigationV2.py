@@ -5,21 +5,21 @@ import math
 import numpy as np
 from collections import deque
 from controls import ControlType
-import roversim
+from visualization import roversim
 
 posResult = []
 oriResult = []
 
 RAD_TO_DEGREES = 180 / math.pi
 ANGLE_THRESHOLD = 10 # degrees
-DISTANCE_THRESHOLD = .5 # meters
-ONTOP_THRESHOLD = .1 # meters
+DISTANCE_THRESHOLD = .1 # meters
+ONTOP_THRESHOLD = .2 # meters
 
 class Coord:
     def __init__(self, x, y, angle):
         self.x = x
         self.y = y
-        self.rads = angle
+        self.rad = angle
 
     def __str__(self):
         return '{'+ \
@@ -49,6 +49,9 @@ class Slam:
         # global currentPos
         currentPos = Coord(x,y,angTheta)
 
+        roversim.draw()
+        roversim.ROVER.setPosition(roversim.Vector2(currentPos.y*100, currentPos.x*100))
+        roversim.ROVER.setRotation(currentPos.rad + math.pi/2)
         if (self.recordFlag):
             if len(self.path) == 0:
                 self.path.append(currentPos)
@@ -60,10 +63,11 @@ class Slam:
                 self.path.append(currentPos)
                 roversim.ROVER.addToPath(roversim.Vector2(currentPos.x, currentPos.y))
         elif (self.followFlag):
-            print(self.followPath(currentPos))
+            self.followPath(currentPos)
+            print(self.control)
+            
 
-
-    def pointToPoint(self, currentPos:Coord) -> ControlType:
+    def followPath(self, currentPos:Coord) -> None:
         if len(self.path) > 0:
             targetPos = self.path[-1]
             targetAngle = math.atan2(targetPos.y-currentPos.y, targetPos.x-currentPos.x)
@@ -73,43 +77,36 @@ class Slam:
             eucDist = math.sqrt((currentPos.x-targetPos.x)**2+(currentPos.y-targetPos.y)**2)
             if eucDist < ONTOP_THRESHOLD:
                 targetPos = self.path.pop()
-                control = ControlType.STOP
-                # for point in path:
-                #     print(point.strPos())
-                #     print()
+                self.control = ControlType.STOP
             elif (math.radians(10) < abs(targetAngle - cAng)):
                 if targetAngle > cAng and targetAngle - cAng < math.pi or targetAngle < cAng and cAng - targetAngle > math.pi:
-                    # print('TURN LEFT', f'{targetAngle:.2f} {cAng:.2f}')
+                    print('TURN LEFT', f'{targetAngle:.2f} {cAng:.2f}')
                     self.control = ControlType.LEFT
 
-                    # angle += math.radians(5)
-                    # angle = wrap(angle)
                 else:
-                    # print('TURN RIGHT', f'{targetAngle:.2f} {cAng:.2f}')
+                    print('TURN RIGHT', f'{targetAngle:.2f} {cAng:.2f}')
                     self.control = ControlType.RIGHT
-                    # angle -= math.radians(5)
-                    # angle = wrap(angle)
 
             
             else:
-                # x = currentPos.x + 5*math.cos(angle)
-                # y = currentPos.y + 5*math.sin(angle)
-                # currentPos = roversim.Vector2(x,y)
-                # print('FORWARD TO:', eucDist)
+                print('FORWARD TO:', eucDist)
                 self.control = ControlType.FORWARD
         else:
             print('END OF PATH')
+            self.followFlag = False
             self.control = ControlType.NOTHING
 
 
     def wrap(angle):
         if angle > math.pi:
             angle = angle - 2*math.pi
-            pass
         elif angle < -1*math.pi:
             angle = 2*math.pi + angle
-            pass
         return angle
+
+    def vizualize(self, currentPos):
+        roversim.ROVER.setPosition(roversim.Vector2(currentPos.y*100, currentPos.x*100))
+        pass
 
 def printPath(path):
     for point in path:

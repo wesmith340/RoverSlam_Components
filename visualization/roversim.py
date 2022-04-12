@@ -51,9 +51,23 @@ class Rover:
         self.ROTATIONSTEP = math.pi/1024
         self.STEP = 0.1
         self.path: List[Vector2] = []
+        self.path2: List[Vector2] = []
+        self._switchPath = False
 
     def addToPath(self, point: Vector2) -> None:
-        self.path.append(point)
+        if self._switchPath:
+            self.path.append(point)
+        else:
+            self.path2.append(point)
+
+    def switchPath(self) -> None:
+        if self._switchPath:
+            self.path2.clear()
+        else:
+            self.path.clear()
+        
+        self._switchPath = not self._switchPath
+
 
     def clearPath(self) -> None:
         self.path.clear()
@@ -75,6 +89,17 @@ class Rover:
                 pygame.draw.line(screen, (255, 0, 0),
                                  lastPoint.getTuple(), point.getTuple())
             pygame.draw.circle(screen, (0, 255, 0),
+                               point.getTuple(), CIRCLE_SIZE * SCALE)
+
+        for i, point in enumerate(self.path2):
+            point = point.copy() + ORIGIN
+            point *= SCALE
+            if i != 0:
+                lastPoint: Vector2 = self.path[i-1].copy() + ORIGIN
+                lastPoint *= SCALE
+                pygame.draw.line(screen, (0, 0, 255),
+                                 lastPoint.getTuple(), point.getTuple())
+            pygame.draw.circle(screen, (0, 100, 100),
                                point.getTuple(), CIRCLE_SIZE * SCALE)
 
         # draw rover and rotation

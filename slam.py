@@ -5,7 +5,7 @@ from std_msgs.msg import String
 from rtabmap_ros.msg import MapGraph
 import math
 import numpy as np
-import roversim
+from visualization import roversim
 
 from collections import deque
 
@@ -13,7 +13,7 @@ posResult = []
 oriResult = []
 
 RAD_TO_DEGREES = 180 / math.pi
-PATH_THRESHOLD = .5 # 50 centimeters
+PATH_THRESHOLD = .2 # 50 centimeters
 
 class Coord:
     def __init__(self, x, y, z, angle, qX, qY, qZ):
@@ -39,7 +39,7 @@ currentPos = None
 
 startPos = None
 targetPos = None
-
+lastPos = None
 dumpPos = None
 digPos = None
 
@@ -88,18 +88,23 @@ def callback(data):
     roversim.ROVER.setRotation(curRad)
 
     roversim.draw()
-    if recordFlag:
-        if len(path) == 0:
-            path.append(currentPos)
-        
+    
+    if len(path) > 0:
         lastPos = path[-1]
+        lastDist = math.sqrt((x-lastPos.x)**2+(y-lastPos.y)**2)
+    else: 
+        lastDist = -1
 
-        if math.sqrt((x-lastPos.x)**2+(y-lastPos.y)**2) > PATH_THRESHOLD:
-            roversim.ROVER.addToPath(roversim.Vector2(currentPos.y*100, currentPos.x*100))
-            path.append(currentPos)
+    if recordFlag and (lastDist > PATH_THRESHOLD or lastDist < 0):
+        roversim.ROVER.addToPath(roversim.Vector2(currentPos.y*100, currentPos.x*100))
+        path.append(currentPos)
     
 
     if (followFlag):
+        
+        if lastDist > PATH_THRESHOLD:
+            roversim.ROVER.addToPath(roversim.Vector2(currentPos.y*100, currentPos.x*100))
+
         targetDeg = RAD_TO_DEGREES*math.atan2(targetPos.y-currentPos.y, targetPos.x-currentPos.x)
         curDeg = currentPos.degrees
         if currentPos.qZ < 0:
@@ -109,7 +114,7 @@ def callback(data):
             targetDeg = 360 + targetDeg
 
         eucDist = math.sqrt((currentPos.x-targetPos.x)**2+(currentPos.y-targetPos.y)**2)
-        if eucDist < .1:
+        if eucDist < .2:
             turnFlag = True
             if(len(path) == 0):
                 followFlag = False
@@ -156,6 +161,7 @@ if __name__ == '__main__':
         if (userIn == 'r'):
             print('Starting record')
             path.clear()
+            roversim.ROVER.switchPath()
             recordFlag = True
         if (userIn == 's'):
             print('Stopping record')
@@ -166,6 +172,7 @@ if __name__ == '__main__':
         if (userIn == 'p'):
             if len(path) > 0:
                 print('Following path')
+                roversim.ROVER.switchPath()
                 followFlag = True
                 targetPos = path.pop()
             else:

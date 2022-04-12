@@ -12,12 +12,48 @@ import rospy
 from sensor_msgs.msg import Image as rosImage
 from cv_bridge import CvBridge
 
+import threading
+import socket
+import pickle
+from dataFrame import DataFrame, HOST, PORT
 
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')  
+
+
+data = None
+conList = []
+running = True
+
+imageSize = 4096
+
+def acceptCon():
+    global running
+    s = socket.socket()        
+    print ("Socket successfully created")
+    
+    s.bind((HOST, PORT))        
+    print ("socket binded to %s" %(PORT))
+    
+    s.listen(5)    
+    while running:
+        try:
+            c, addr = s.accept()    
+            print ('Got connection from', addr )
+            c.send(imageSize.to_bytes(4, 'big'))
+            conList.append(c)
+        except Exception as e:
+            print(e)
+            for c in conList:
+                c.close()
+            running = False
+
+t = threading.Thread(target=acceptCon)
+t.start()
+
 
 
 PATH_TO_SAVED_MODEL = "./MRO/export/saved_model"
@@ -33,8 +69,23 @@ elapsed_time = end_time - start_time
 print('Done! Took {} seconds'.format(elapsed_time))
 
 def callback(data):
+    global imageSize
+
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
+
+    im = pickle.dumps(DataFrame(cv_image))
+    imageSize = len(im)
+    
+    for c in conList:
+        try:
+            c.send(data)
+        except Exception as e:
+            print(e)
+            conList.remove(c)
+            c.close()
+
+
 
     image_np = np.array(cv_image)
     input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.uint8)
@@ -94,19 +145,19 @@ def listener():
     # 
 
 category_index = label_map_util.create_category_index_from_labelmap('./MRO/label_map.pbtxt', use_display_name=True)
-
+listener()
 
 # cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
 # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-running = True
-listener()
-while running: 
-    # if cv2.waitKey(10) & 0xFF == ord('q'):
-    #     running = False
-    #     cv2.destroyAllWindows()
-    #     break
-    usrIn = input()
-    if usrIn == 'q':
-        running = False
+if __name__ == '__main__':
+    running = True
+    
+    while running: 
+        # if cv2.waitKey(10) & 0xFF == ord('q'):
+        #     running = False
+        #     cv2.destroyAllWindows()
+        #     break
+        usrIn = input()
+        if usrIn == 'q':
+            running = False
