@@ -13,9 +13,8 @@ from sensor_msgs.msg import Image as rosImage
 from cv_bridge import CvBridge
 
 import threading
-import socket
+from mlsocket import MLSocket
 import pickle
-from dataFrame import DataFrame, HOST, PORT
 
 import numpy as np
 from PIL import Image
@@ -28,28 +27,23 @@ data = None
 conList = []
 running = True
 
-imageSize = 4096
+# HOST = '169.254.27.83'
+HOST = 'localhost'
+PORT = 5001
+IMG_SIZE = 921765
 
 def acceptCon():
-    global running
-    s = socket.socket()        
-    print ("Socket successfully created")
-    
-    s.bind((HOST, PORT))        
-    print ("socket binded to %s" %(PORT))
-    
-    s.listen(5)    
-    while running:
-        try:
-            c, addr = s.accept()    
-            print ('Got connection from', addr )
-            c.send(imageSize.to_bytes(4, 'big'))
-            conList.append(c)
-        except Exception as e:
-            print(e)
-            for c in conList:
-                c.close()
-            running = False
+    global conList
+    with MLSocket() as s:
+        while True:
+            try:
+                s.bind((HOST, PORT))
+                s.listen()
+                conn, address = s.accept()
+                conList.append(conn)
+                print('connection from', address)
+            except:
+                break
 
 t = threading.Thread(target=acceptCon)
 t.start()
@@ -74,12 +68,10 @@ def callback(data):
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
 
-    im = pickle.dumps(DataFrame(cv_image))
-    imageSize = len(im)
-    
+    image_np = np.array(cv_image)
     for c in conList:
         try:
-            c.send(data)
+            c.send(image_np)
         except Exception as e:
             print(e)
             conList.remove(c)
@@ -87,7 +79,7 @@ def callback(data):
 
 
 
-    image_np = np.array(cv_image)
+    
     input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.uint8)
     input_tensor = input_tensor[:, :, :, :3]
     detections = detect_fn(input_tensor)
@@ -111,26 +103,28 @@ def callback(data):
                 category_index,
                 use_normalized_coordinates=True,
                 max_boxes_to_draw=1,
-                min_score_thresh=.9,
+                min_score_thresh=.85,
                 skip_labels=True,
-                skip_scores=True,
+                skip_scores=False,
                 agnostic_mode=False)
     
-    min_score_thresho = 0.7
+    min_score_thresho = 0.90
     
-
     # print([category_index.get(i) for i in detections['detection_classes'] if detections['detection_scores'][i] > min_score_thresho])
-    
-    out  = ['OH YEAH!!' for i in detections['detection_classes'] if detections['detection_scores'][i] > min_score_thresho]
-    
-    if len(out) > 0:
-        print(out[0])
+    #print(max(detections['detection_scores']))
+    #out  = ['OH YEAH!!' for i in detections['detection_classes'] if detections['detection_scores'][0] > min_score_thresho]
+    if max(detections['detection_scores']) > min_score_thresho:
+        print('HELL YEh')
+    # if len(out) > 0:
+    #     print(out[0])
     else:
         print('nothing detected')
     
     cv2.imshow('rock detection',  cv2.resize(image_np_with_detections, (800, 600)))
     
-    if cv2.waitKey(10) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        global running
+        running = False
         cv2.destroyAllWindows()
 
 def listener():
@@ -152,12 +146,6 @@ listener()
 # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 if __name__ == '__main__':
     running = True
-    
-    while running: 
-        # if cv2.waitKey(10) & 0xFF == ord('q'):
-        #     running = False
-        #     cv2.destroyAllWindows()
-        #     break
-        usrIn = input()
-        if usrIn == 'q':
-            running = False
+    rospy.spin()
+    # while running: 
+    #     pass

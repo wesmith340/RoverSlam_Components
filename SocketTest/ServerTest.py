@@ -1,47 +1,44 @@
 from ctypes import sizeof
 import cv2
-from dataFrame import DataFrame, HOST, PORT
+import numpy as np
 import pickle
-import socket
+from mlsocket import MLSocket
 import threading
+
+# HOST = '169.254.27.83'
+HOST = 'localhost'
+PORT = 5001
 
 data = None
 conList = []
 running = True
 
-imageSize = 4096
+IMG_SIZE = 921765
 
 def acceptCon():
-    global running
-    s = socket.socket()        
-    print ("Socket successfully created")
-    
-    s.bind((HOST, PORT))        
-    print ("socket binded to %s" %(PORT))
-    
-    s.listen(5)    
-    while running:
-        try:
-            c, addr = s.accept()    
-            print ('Got connection from', addr )
-            c.send(imageSize.to_bytes(4, 'big'))
-            conList.append(c)
-        except Exception as e:
-            print(e)
-            for c in conList:
-                c.close()
-            running = False
+    global conList
+    with MLSocket() as s:
+        while True:
+            try:
+                s.bind((HOST, PORT))
+                s.listen()
+                conn, address = s.accept()
+                conList.append(conn)
+                print('connection from', address)
+            except:
+                break
 
 t = threading.Thread(target=acceptCon)
 t.start()
 
 # define a video capture object
 vid = cv2.VideoCapture(0)
+
 while(running):
     # Capture the video frame
     ret, frame = vid.read()
-    data = pickle.dumps(DataFrame(frame))
-    imageSize = len(data)
+    data = np.array(frame)
+    print(len(data))
     for c in conList:
         try:
             c.send(data)
@@ -49,6 +46,9 @@ while(running):
             print(e)
             conList.remove(c)
             c.close()
+
+    if cv2.waitKey(1) & 0xFF == 27:
+        break 
 
  
 
