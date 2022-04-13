@@ -27,8 +27,8 @@ data = None
 conList = []
 running = True
 
-# HOST = '169.254.27.83'
-HOST = 'localhost'
+HOST = '169.254.157.5'
+# HOST = 'localhost'
 PORT = 5001
 IMG_SIZE = 921765
 
