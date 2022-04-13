@@ -120,12 +120,12 @@ def callback(data):
     else:
         print('nothing detected')
     
-    cv2.imshow('rock detection',  cv2.resize(image_np_with_detections, (800, 600)))
+    # cv2.imshow('rock detection',  cv2.resize(image_np_with_detections, (800, 600)))
     
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        global running
-        running = False
-        cv2.destroyAllWindows()
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     global running
+    #     running = False
+    #     cv2.destroyAllWindows()
 
 def listener():
 
@@ -146,6 +146,8 @@ listener()
 # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 if __name__ == '__main__':
     running = True
-    rospy.spin()
-    # while running: 
-    #     pass
+    # rospy.spin()
+    while running: 
+        usrIn = input()
+        if usrIn == 'q':
+            running = False
