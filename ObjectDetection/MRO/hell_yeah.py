@@ -59,7 +59,10 @@ def acceptCon():
 def sendImage(image_np):
     pickleRick = pickle.dumps(image_np)
     # print(len(pickleRick))
+    i = 0
     for c in conList:
+        print(i)
+        i+=1
         try:
             c.send(pickleRick)
         except Exception as e:
@@ -160,8 +163,8 @@ listener()
 # height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 if __name__ == '__main__':
     running = True
-    # rospy.spin()
-    while running: 
-        usrIn = input()
-        if usrIn == 'q':
-            running = False
+    rospy.spin()
+    # while running: 
+    #     usrIn = input()
+    #     if usrIn == 'q':
+    #         running = False
