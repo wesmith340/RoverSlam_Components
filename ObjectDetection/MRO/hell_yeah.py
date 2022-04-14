@@ -34,7 +34,7 @@ PORT = 5001
 IMG_SIZE = 921765
 
 def acceptCon():
-    global conList
+    global conList, running
     # with MLSocket() as s:
     #     while True:
     #         try:
@@ -47,7 +47,7 @@ def acceptCon():
     #             break
     with socket.socket() as s:
         s.bind((HOST, PORT))
-        while True:
+        while running:
             try:
                 s.listen()
                 conn, address = s.accept()

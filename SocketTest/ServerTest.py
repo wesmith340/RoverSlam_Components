@@ -1,12 +1,11 @@
-from ctypes import sizeof
 import cv2
 import numpy as np
 import pickle
 from mlsocket import MLSocket
 import threading
 
-# HOST = '169.254.27.83'
-HOST = 'localhost'
+HOST = '169.254.157.5'
+# HOST = 'localhost'
 PORT = 5001
 
 data = None
@@ -38,7 +37,7 @@ while(running):
     # Capture the video frame
     ret, frame = vid.read()
     data = np.array(frame)
-    print(len(data))
+    # print(len(data))
     for c in conList:
         try:
             c.send(data)
