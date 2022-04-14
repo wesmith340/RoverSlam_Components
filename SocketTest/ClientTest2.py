@@ -12,9 +12,9 @@ MSG_LEN = 4096
 
 with MLSocket() as s:
     s.connect((HOST, PORT))
-
+    img = s.recv(IMG_SIZE)
     while True:
-        img = s.recv(IMG_SIZE)
+        
         # img = pickle.loads(data)
         cv2.imshow('test2',  cv2.resize(img, (800, 600)))
 

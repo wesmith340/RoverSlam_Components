@@ -1,26 +1,29 @@
 import cv2
 import numpy as np
 import pickle
-from mlsocket import MLSocket
+# from mlsocket import MLSocket
+import socket
 import threading
 
-HOST = '169.254.157.5'
-# HOST = 'localhost'
+# HOST = '169.254.157.5'
+HOST = 'localhost'
 PORT = 5001
 
 data = None
 conList = []
 running = True
 
+HEADER_SIZE = 10
 IMG_SIZE = 921765
 img = cv2.imread('SocketTest/test.jpeg')
 
 img = np.array(img)
-
-
+data = pickle.dumps(img)
+size = len(data)
+msg = bytes(f'{size:{HEADER_SIZE}}', encoding='utf8') + data
 def acceptCon():
-    global conList, img, running
-    with MLSocket() as s:
+    global conList, msg, running
+    with socket.socket() as s:
         while running:
             try:
                 s.bind((HOST, PORT))
@@ -28,7 +31,7 @@ def acceptCon():
                 conn, address = s.accept()
                 # conList.append(conn)
                 print('connection from', address)
-                conn.send(img)
+                conn.send(msg)
                 
             except:
                 break
