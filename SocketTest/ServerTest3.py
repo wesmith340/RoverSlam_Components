@@ -24,10 +24,11 @@ msg = bytes(f'{size:{HEADER_SIZE}}', encoding='utf8') + data
 def acceptCon():
     global conList, msg, running
     with socket.socket() as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        print('Listening at', HOST,':',PORT)
         while running:
             try:
-                s.bind((HOST, PORT))
-                s.listen()
                 conn, address = s.accept()
                 # conList.append(conn)
                 print('connection from', address)
@@ -54,11 +55,14 @@ while(running):
     #         print(e)
     #         conList.remove(c)
     #         c.close()
-    cv2.imshow('window', img)
+    # cv2.imshow('window', img)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     running = False
+    #     break
+    usrIn = input()
+    if usrIn == 'q':
         running = False
-        break
 
  
 

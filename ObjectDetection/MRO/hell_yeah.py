@@ -28,43 +28,37 @@ data = None
 conList = []
 running = True
 
-HOST = '169.254.157.5'
-# HOST = 'localhost'
+# HOST = '169.254.157.5'
+HOST = 'localhost'
 PORT = 5001
+HEADER_SIZE = 10
 IMG_SIZE = 921765
 
 def acceptCon():
-    global conList, running
-    # with MLSocket() as s:
-    #     while True:
-    #         try:
-    #             s.bind((HOST, PORT))
-    #             s.listen()
-    #             conn, address = s.accept()
-    #             conList.append(conn)
-    #             print('connection from', address)
-    #         except:
-    #             break
+    global conList, msg, running
     with socket.socket() as s:
         s.bind((HOST, PORT))
+        s.listen()
+        print('Listening at', HOST,':',PORT)
         while running:
             try:
-                s.listen()
                 conn, address = s.accept()
                 conList.append(conn)
                 print('connection from', address)
+                
             except:
                 break
 
 def sendImage(image_np):
-    pickleRick = pickle.dumps(image_np)
-    # print(len(pickleRick))
+    data = pickle.dumps(image_np)
+    size = len(data)
+    msg = bytes(f'{size:{HEADER_SIZE}}', encoding='utf8') + data
     i = 0
     for c in conList:
         print(i)
         i+=1
         try:
-            c.send(pickleRick)
+            c.send(msg)
         except Exception as e:
             print(e)
             conList.remove(c)
