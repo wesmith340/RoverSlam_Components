@@ -18,6 +18,8 @@ IMG_SIZE = 921765
 img = cv2.imread('SocketTest/test.jpeg')
 
 img = np.array(img)
+print(img.shape)
+
 data = pickle.dumps(img)
 size = len(data)
 msg = bytes(f'{size:{HEADER_SIZE}}', encoding='utf8') + data

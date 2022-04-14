@@ -16,6 +16,7 @@ import threading
 # from mlsocket import MLSocket
 import socket
 import pickle
+import time
 
 import numpy as np
 from PIL import Image
@@ -28,8 +29,8 @@ data = None
 conList = []
 running = True
 
-# HOST = '169.254.157.5'
-HOST = 'localhost'
+HOST = '169.254.157.5'
+# HOST = 'localhost'
 PORT = 5001
 HEADER_SIZE = 10
 IMG_SIZE = 921765
@@ -50,8 +51,10 @@ def acceptCon():
                 break
 
 def sendImage(image_np):
+    print(image_np.shape)
     data = pickle.dumps(image_np)
     size = len(data)
+    print(size)
     msg = bytes(f'{size:{HEADER_SIZE}}', encoding='utf8') + data
     i = 0
     for c in conList:
