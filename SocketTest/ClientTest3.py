@@ -5,8 +5,8 @@ import socket
 import cv2
  
 
-# HOST = '169.254.27.83'
-HOST = 'localhost'
+HOST = '169.254.27.83'
+# HOST = 'localhost'
 PORT = 5001
 IMG_SIZE = 921765
 MSG_LEN = 4096
@@ -16,16 +16,18 @@ def recieve(s):
     size = int(s.recv(HEADER_SIZE).decode('utf8'))
     pos = 0
     fragments = []
-    running = True
-    while running:
-        if pos + MSG_LEN >= size:
-            frag = s.recv(size-pos)
-            running = False
-        else:
-            frag = s.recv(MSG_LEN)
+    chunkSize = MSG_LEN
+    while chunkSize > 0:
+        print(pos, size)
+        frag = s.recv(chunkSize)
         pos += len(frag)
         fragments.append(frag)
+        if size - pos > MSG_LEN:
+            chunkSize = MSG_LEN
+        else:
+            chunkSize = size - pos
 
+    print(pos, size)
     data = b''.join(fragments)
     img = pickle.loads(data)
     return img

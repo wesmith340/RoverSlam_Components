@@ -5,8 +5,8 @@ import pickle
 import socket
 import threading
 
-# HOST = '169.254.157.5'
-HOST = 'localhost'
+HOST = '169.254.157.5'
+# HOST = 'localhost'
 PORT = 5001
 
 data = None
