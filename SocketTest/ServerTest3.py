@@ -15,7 +15,7 @@ running = True
 
 HEADER_SIZE = 10
 IMG_SIZE = 921765
-img = cv2.imread('SocketTest/test.jpeg')
+img = cv2.imread('SocketTest/test.png')
 
 img = np.array(img)
 print(img.shape)
@@ -34,7 +34,8 @@ def acceptCon():
                 conn, address = s.accept()
                 # conList.append(conn)
                 print('connection from', address)
-                conn.send(msg)
+                for i in range(100):
+                    conn.send(msg)
                 
             except:
                 break

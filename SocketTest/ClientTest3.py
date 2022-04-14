@@ -36,7 +36,7 @@ def recieve(s):
 with socket.socket() as s:
     s.connect((HOST, PORT))
     
-    while True:
+    for i in range(1000):
         img = recieve(s)
         cv2.imshow('test2',  cv2.resize(img, (800, 600)))
 

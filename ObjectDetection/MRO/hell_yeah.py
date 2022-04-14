@@ -13,14 +13,11 @@ from sensor_msgs.msg import Image as rosImage
 from cv_bridge import CvBridge
 
 import threading
-# from mlsocket import MLSocket
-import socket
+from mlsocket import MLSocket
 import pickle
 import time
 
 import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')  
 
@@ -32,36 +29,28 @@ running = True
 HOST = '169.254.157.5'
 # HOST = 'localhost'
 PORT = 5001
-HEADER_SIZE = 10
-IMG_SIZE = 921765
+
+temp = True
 
 def acceptCon():
-    global conList, msg, running
-    with socket.socket() as s:
+    global conList, running
+    
+    with MLSocket() as s:
         s.bind((HOST, PORT))
         s.listen()
-        print('Listening at', HOST,':',PORT)
         while running:
             try:
                 conn, address = s.accept()
                 conList.append(conn)
-                print('connection from', address)
-                
+                print('connection from', address)  
             except:
                 break
-
 def sendImage(image_np):
-    print(image_np.shape)
-    data = pickle.dumps(image_np)
-    size = len(data)
-    print(size)
-    msg = bytes(f'{size:{HEADER_SIZE}}', encoding='utf8') + data
     i = 0
     for c in conList:
-        print(i)
         i+=1
         try:
-            c.send(msg)
+            c.sendall(image_np)
         except Exception as e:
             print(e)
             conList.remove(c)
@@ -87,6 +76,11 @@ print('Done! Took {} seconds'.format(elapsed_time))
 def callback(data):
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
+
+    # global temp
+    # if temp:
+    #     temp = False
+    #     cv2.imwrite('test.png', cv_image)
 
     image_np = np.array(cv_image)
     
