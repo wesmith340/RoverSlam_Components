@@ -1,12 +1,8 @@
-
-import os
-import pathlib
 import tensorflow as tf
 import time
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
-import cv2
 
 import rospy
 from sensor_msgs.msg import Image as rosImage
@@ -14,8 +10,8 @@ from cv_bridge import CvBridge
 
 import threading
 from mlsocket import MLSocket
-import pickle
-import time
+
+from controls import ControlType
 
 import numpy as np
 import warnings
@@ -148,6 +144,8 @@ def listener():
 
 category_index = label_map_util.create_category_index_from_labelmap('./MRO/label_map.pbtxt', use_display_name=True)
 listener()
+
+control = ControlType.NOTHING
 
 # cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
 # width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
