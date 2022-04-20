@@ -1,5 +1,4 @@
 import serial, time
-from pynput import keyboard
 import pygame
 from controls import ControlType
 from serial.tools.list_ports import comports
@@ -11,7 +10,7 @@ def sendCommand(port, command):
     port.write(command)
 
 
-arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600, timeout=.1)
+arduino = serial.Serial(port='COM11', baudrate=9600)
 
 # while True:
 #     num = input("Enter a number: ") # Taking input from user
@@ -56,6 +55,7 @@ keys = {
 }
 
 prevC = ControlType.STOP
+
 # game loop
 while running:
 # for loop through the event queue  
@@ -79,7 +79,7 @@ while running:
             c = keys[k].moveType
 
     if c != prevC:
-        arduino.write(int.to_bytes(c.value, 32, byteorder='little'))
+        arduino.write(f'{c.value}'.encode())
         print(c)
-        pass
+        
     prevC = c
