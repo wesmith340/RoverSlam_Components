@@ -1,8 +1,8 @@
-from controls import ControlType
+
 from collections import deque
 import math
 
-from ..Serial_Commands import controller
+# from ..Serial_Commands import controller
 from ..Serial_Commands.controls import ControlType, Precedence
 
 from threading import Condition
@@ -24,7 +24,7 @@ class Slam:
     ANGLE_THRESHOLD = 10 # degrees
     DISTANCE_THRESHOLD = .1 # meters
     ONTOP_THRESHOLD = .2 # meters
-    
+    DISTANCE_TO_DIGSITE = 5 # meters
     
     def __init__(self) -> None:
         self.path = deque()
@@ -39,8 +39,13 @@ class Slam:
 
     def saveHome(self) -> None:
         self.home = self.curPos
+        rad = self.curPos.rad
+        x = self.curPos.x + Slam.DISTANCE_TO_DIGSITE * math.cos(rad)
+        y = self.curPos.y + Slam.DISTANCE_TO_DIGSITE * math.sin(rad)
+        self.path.append(Coord(x, y, 0))
 
-    def flipPath(self):
+    def flipPath(self, c:Condition):
+        self.condition = c
         temp = self.path
         temp.clear()
         self.path = self.recordPath
@@ -49,6 +54,11 @@ class Slam:
     def startFollowing(self, c: Condition):
         self.condition = c
         self.followFlag = True
+    def addPoint(self, dist):
+        rad = self.curPos.rad
+        x = self.curPos.x + dist * math.cos(rad)
+        y = self.curPos.y + dist * math.sin(rad)
+        self.path.append(Coord(x, y, 0))
 
     def rotate180(self, c: Condition):
         self.condition = c
@@ -64,11 +74,15 @@ class Slam:
                 or math.radians(self.ANGLE_THRESHOLD) < abs(math.pi-self.targetAngle + math.pi+currentPos.rad) 
                 or math.radians(self.ANGLE_THRESHOLD) < abs(math.pi+self.targetAngle + math.pi-currentPos.rad)):
 
-            controller.sendCommand(Precedence.NAVIGATION, ControlType.STOP)
-            controller.sendCommand(Precedence.NAVIGATION, ControlType.NOTHING)
+            print(Precedence.NAVIGATION, ControlType.STOP)
+            # controller.sendCommand(Precedence.NAVIGATION, ControlType.STOP)
+            # controller.sendCommand(Precedence.NAVIGATION, ControlType.NOTHING)
+            self.condition.acquire()
             self.condition.notify_all()
-        else:    
-            controller.sendCommand(Precedence.NAVIGATION, ControlType.RIGHT)
+            self.condition.release()
+        else:
+            print(Precedence.NAVIGATION, ControlType.RIGHT)
+            # controller.sendCommand(Precedence.NAVIGATION, ControlType.RIGHT)
 
     def callback(self, data):
         x = data.poses[-1].position.x
@@ -81,22 +95,22 @@ class Slam:
         angTheta = math.acos(w)*2
         if qZ < 0:
             angTheta *= -1
-
         # global currentPos
         self.curPos = Coord(x,y,angTheta)
 
         if (self.recordFlag):
-            if len(self.path) == 0:
+            if len(self.recordPath) == 0:
                 self.path.append(self.curPos)
 
-            dist = math.sqrt((self.curPos.x-self.path[-1].x)**2+(self.curPos.y-self.path[-1].y)**2)
+            dist = math.sqrt((self.curPos.x-self.recordPath[-1].x)**2+(self.curPos.y-self.recordPath[-1].y)**2)
             if dist > Slam.DISTANCE_THRESHOLD:
-                print('point taken')
-                self.path.append(self.curPos)
-
-        elif (self.followFlag):
+                self.recordPath.append(self.curPos)
+        print(self.followFlag, self.rotatingFlag)
+        if (self.followFlag):
             self.followPath(self.curPos)
             print(self.control)
+        elif (self.rotatingFlag):
+            self.rotate(self.curPos)
                 
 
     def followPath(self, currentPos:Coord) -> None:
@@ -112,26 +126,24 @@ class Slam:
                 targetPos = self.path.pop()
                 self.control = ControlType.STOP
             elif (math.radians(self.ANGLE_THRESHOLD) < abs(targetAngle - cAng) 
-                    or math.radians(self.ANGLE_THRESHOLD) < abs(math.pi-targetAngle + math.pi+cAng) 
-                    or math.radians(self.ANGLE_THRESHOLD) < abs(math.pi+targetAngle + math.pi-cAng)):
+                    and math.radians(self.ANGLE_THRESHOLD) < abs(math.pi-targetAngle + math.pi+cAng) 
+                    and math.radians(self.ANGLE_THRESHOLD) < abs(math.pi+targetAngle + math.pi-cAng)):
                 if targetAngle > cAng and targetAngle - cAng < math.pi or targetAngle < cAng and cAng - targetAngle > math.pi:
-                    print('TURN LEFT', f'{targetAngle:.2f} {cAng:.2f}')
                     self.control = ControlType.LEFT
 
                 else:
-                    print('TURN RIGHT', f'{targetAngle:.2f} {cAng:.2f}')
                     self.control = ControlType.RIGHT
             
             else:
-                print('FORWARD TO:', eucDist)
                 self.control = ControlType.FORWARD
         else:
-            print('END OF PATH')
             self.followFlag = False
             self.control = ControlType.NOTHING
+            self.condition.acquire()
             self.condition.notify_all()
-
-        controller.sendCommand(Slam.SENDER_TYPE, self.control)
+            self.condition.release()
+        print(Slam.SENDER_TYPE, self.control)
+        # controller.sendCommand(Slam.SENDER_TYPE, self.control)
 
 
     def wrap(angle):
@@ -146,10 +158,8 @@ class Slam:
         rospy.Subscriber("/rtabmap/mapGraph", MapGraph, self.callback)
 
 slam = Slam()
-
+slam.listener()
 if __name__ == '__main__':
-
-    slam.listener()
     print('Commands')
     print("  'r' : start recording")
     print("  'r' : stop recording")
