@@ -70,11 +70,11 @@ def depthCallback(data):
     #     w.write()
     #     # print(curDepthImage.shape)
 
-turnFlag = TurnFlag(True)
+turnFlag = TurnFlag()
 
 def callback(data):
     global turnFlag
-    if turnFlag.flag:
+    if turnFlag.flag is False:
         bridge = CvBridge()
         cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
 
@@ -132,8 +132,8 @@ def callback(data):
                     # controller.sendCommand(SENDER_TYPE, ControlType.LEFT)
                     # print('left')
                     targetAngle = math.asin(AVOID_DISTANCE/dist)
-                    targetDist = obstacle.dist/math.cos(slam.curPos.rad-obstacle.startRad)
-                    slam.avoidRock(targetDist)
+                    targetDist = obstacle.dist/math.cos(targetAngle)
+                    slam.avoidRock(targetAngle, targetDist, turningFlag)
 
 
                 print(f'Dist to rock {i}: {dist}')

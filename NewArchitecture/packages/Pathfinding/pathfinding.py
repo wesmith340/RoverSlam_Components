@@ -32,6 +32,8 @@ class Slam:
         self.followFlag = False
         self.targetAngle = None
         self.rotatingFlag = False
+        self.flag180 = False
+        self.objFlag = None
         self.control = ControlType.NOTHING
         self.curPos = None
         self.condition = None
@@ -64,6 +66,7 @@ class Slam:
 
     def rotate180(self, c: Condition):
         self.condition = c
+        self.flag180 = True
         if self.curPos.rad > 0:
             self.targetAngle = self.curPos.rad - math.pi
         else:
@@ -73,8 +76,14 @@ class Slam:
         self.rotatingFlag = True
 
     def avoidRock(self, turnAngle, targetDistance, turnFlag):
-        targetAngle = self.wrap(turnAngle+self.curPos.rad)
-        self.addPoint(targetDistance, rad=targetAngle)
+        self.objFlag = turnFlag
+        self.objFlag.flag = True
+        self.targetAngle = self.wrap(turnAngle+self.curPos.rad)
+
+        self.addPoint(targetDistance, rad=self.targetAngle)
+        self.followFlag = False
+        self.turningFlag = True
+
 
     def rotate(self, currentPos:Coord):
         diff = abs(self.targetAngle - currentPos.rad)
@@ -83,10 +92,17 @@ class Slam:
             diff = 2*math.pi - diff
         if diff < math.radians(self.ANGLE_THRESHOLD):
 
+            
             print(Precedence.NAVIGATION, ControlType.STOP)
             controller.sendCommand(Precedence.NAVIGATION, ControlType.STOP)
             controller.sendCommand(Precedence.NAVIGATION, ControlType.NOTHING)
-            self.condition.notify_all()
+            if self.flag180:
+                self.condition.notify_all()
+            else:
+                self.objFlag.flag = False     
+
+            self.followFlag = True
+            self.rotatingFlag = False       
         else:
             print(Precedence.NAVIGATION, ControlType.RIGHT)
             controller.sendCommand(Precedence.NAVIGATION, ControlType.RIGHT)
@@ -132,6 +148,7 @@ class Slam:
             if eucDist < self.ONTOP_THRESHOLD:
                 targetPos = self.path.pop()
                 self.control = ControlType.STOP
+
             elif (math.radians(self.ANGLE_THRESHOLD) < abs(targetAngle - cAng) 
                     and math.radians(self.ANGLE_THRESHOLD) < abs(math.pi-targetAngle + math.pi+cAng) 
                     and math.radians(self.ANGLE_THRESHOLD) < abs(math.pi+targetAngle + math.pi-cAng)):
