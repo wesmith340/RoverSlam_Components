@@ -2,7 +2,7 @@
 from collections import deque
 import math
 
-# from ..Serial_Commands import controller
+from ..Serial_Commands import controller
 from ..Serial_Commands.controls import ControlType, Precedence
 
 from threading import Condition
@@ -29,7 +29,6 @@ class Slam:
     def __init__(self) -> None:
         self.path = deque()
         self.recordPath = deque()
-        self.recordFlag = False
         self.followFlag = False
         self.targetAngle = None
         self.rotatingFlag = False
@@ -42,6 +41,8 @@ class Slam:
         rad = self.curPos.rad
         x = self.curPos.x + Slam.DISTANCE_TO_DIGSITE * math.cos(rad)
         y = self.curPos.y + Slam.DISTANCE_TO_DIGSITE * math.sin(rad)
+        self.path.clear()
+        self.recordPath.clear()
         self.path.append(Coord(x, y, 0))
 
     def flipPath(self, c:Condition):
@@ -54,8 +55,9 @@ class Slam:
     def startFollowing(self, c: Condition):
         self.condition = c
         self.followFlag = True
-    def addPoint(self, dist):
-        rad = self.curPos.rad
+    def addPoint(self, dist, rad=None):
+        if rad is None:
+            rad = self.curPos.rad
         x = self.curPos.x + dist * math.cos(rad)
         y = self.curPos.y + dist * math.sin(rad)
         self.path.append(Coord(x, y, 0))
@@ -66,23 +68,28 @@ class Slam:
             self.targetAngle = self.curPos.rad - math.pi
         else:
             self.targetAngle = self.curPos.rad + math.pi
+        print(self.curPos.rad, self.targetAngle)
         self.followFlag = False
         self.rotatingFlag = True
 
+    def avoidRock(self, turnAngle, targetDistance, turnFlag):
+        targetAngle = self.wrap(turnAngle+self.curPos.rad)
+        self.addPoint(targetDistance, rad=targetAngle)
+
     def rotate(self, currentPos:Coord):
-        if (math.radians(self.ANGLE_THRESHOLD) < abs(self.targetAngle - currentPos.rad) 
-                or math.radians(self.ANGLE_THRESHOLD) < abs(math.pi-self.targetAngle + math.pi+currentPos.rad) 
-                or math.radians(self.ANGLE_THRESHOLD) < abs(math.pi+self.targetAngle + math.pi-currentPos.rad)):
+        diff = abs(self.targetAngle - currentPos.rad)
+        print(diff)
+        if diff > math.pi:
+            diff = 2*math.pi - diff
+        if diff < math.radians(self.ANGLE_THRESHOLD):
 
             print(Precedence.NAVIGATION, ControlType.STOP)
-            # controller.sendCommand(Precedence.NAVIGATION, ControlType.STOP)
-            # controller.sendCommand(Precedence.NAVIGATION, ControlType.NOTHING)
-            self.condition.acquire()
+            controller.sendCommand(Precedence.NAVIGATION, ControlType.STOP)
+            controller.sendCommand(Precedence.NAVIGATION, ControlType.NOTHING)
             self.condition.notify_all()
-            self.condition.release()
         else:
             print(Precedence.NAVIGATION, ControlType.RIGHT)
-            # controller.sendCommand(Precedence.NAVIGATION, ControlType.RIGHT)
+            controller.sendCommand(Precedence.NAVIGATION, ControlType.RIGHT)
 
     def callback(self, data):
         x = data.poses[-1].position.x
@@ -98,15 +105,15 @@ class Slam:
         # global currentPos
         self.curPos = Coord(x,y,angTheta)
 
-        if (self.recordFlag):
+        # print(self.followFlag, self.rotatingFlag)
+        if (self.followFlag):
             if len(self.recordPath) == 0:
-                self.path.append(self.curPos)
+                self.recordPath.append(self.curPos)
 
             dist = math.sqrt((self.curPos.x-self.recordPath[-1].x)**2+(self.curPos.y-self.recordPath[-1].y)**2)
             if dist > Slam.DISTANCE_THRESHOLD:
                 self.recordPath.append(self.curPos)
-        print(self.followFlag, self.rotatingFlag)
-        if (self.followFlag):
+
             self.followPath(self.curPos)
             print(self.control)
         elif (self.rotatingFlag):
@@ -139,11 +146,9 @@ class Slam:
         else:
             self.followFlag = False
             self.control = ControlType.NOTHING
-            self.condition.acquire()
             self.condition.notify_all()
-            self.condition.release()
         print(Slam.SENDER_TYPE, self.control)
-        # controller.sendCommand(Slam.SENDER_TYPE, self.control)
+        controller.sendCommand(Slam.SENDER_TYPE, self.control)
 
 
     def wrap(angle):
@@ -157,6 +162,14 @@ class Slam:
         rospy.init_node('ekf_slam')
         rospy.Subscriber("/rtabmap/mapGraph", MapGraph, self.callback)
 
+    def clear(self):
+        self.path.clear()
+        self.recordPath.clear()
+        self.followFlag = False
+        self.rotatingFlag = False
+
+    def shutDown(self):
+        rospy.destroy
 slam = Slam()
 slam.listener()
 if __name__ == '__main__':
@@ -169,7 +182,7 @@ if __name__ == '__main__':
     usrIn = input()
 
     while usrIn != 'q':
-        if slam.recordFlag == False and usrIn == 'r':
+        if usrIn == 'r':
             slam.flipPath()
         elif usrIn == 's':
             print('Following path')

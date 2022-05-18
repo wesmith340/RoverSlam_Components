@@ -10,7 +10,8 @@ data = None
 conList = []
 running = True
 
-HOST = '169.254.157.5'
+# HOST = '169.254.157.5'
+HOST = '192.168.50.243'
 # HOST = 'localhost'
 PORT = 5001
 
@@ -53,5 +54,6 @@ t = threading.Thread(target=acceptCon)
 listener()
 t.start()
 
+print('listening')
 while input() != 'q':
     pass

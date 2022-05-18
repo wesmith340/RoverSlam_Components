@@ -9,7 +9,7 @@ def sendCommand(port, command):
     port.write(command)
 
 
-arduino = serial.Serial(port='/dev/ttyACM1', baudrate=9600)
+arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
 
 # while True:
 #     num = input("Enter a number: ") # Taking input from user
@@ -37,4 +37,3 @@ while running:
     if usrIn in keys:
         arduino.write(f'{keys[usrIn].value}'.encode())
         print(keys[usrIn])
-        print(arduino.readline().decode())

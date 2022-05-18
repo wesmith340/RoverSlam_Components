@@ -17,6 +17,7 @@ class ControlType(Enum):
     NOTHING = -1
 
 class Precedence(Enum):
+    MANUAL = -1
     NAVIGATION = 0
     OBJECT_DETECTION = 1
     QR_CODE = 2
