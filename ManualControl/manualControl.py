@@ -1,5 +1,4 @@
 import serial, time
-from controls import ControlType
 from serial.tools.list_ports import comports
 from enum import Enum
 

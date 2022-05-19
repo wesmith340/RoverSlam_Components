@@ -5,7 +5,7 @@ import cv2
  
 
 # HOST = '169.254.27.83'
-HOST = '169.254.157.5'
+HOST = '192.168.50.243'
 # HOST = 'localhost'
 PORT = 5001
 # IMG_SIZE = 921765
