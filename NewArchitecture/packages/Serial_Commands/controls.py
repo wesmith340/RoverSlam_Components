@@ -20,7 +20,7 @@ class Precedence(Enum):
     MANUAL = -1
     NAVIGATION = 0
     OBJECT_DETECTION = 1
-    QR_CODE = 2
-    PATH_FINDING = 3
+    QR_CODE = 3
+    PATH_FINDING = 2
     NOTHING = 4
     
